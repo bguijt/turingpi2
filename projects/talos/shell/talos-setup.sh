@@ -177,7 +177,6 @@ done
 for node in 0 1 2 3; do
   until nc -zw 3 ${IPS[@]:$node:1} 50000; do sleep 3; printf '.'; done
   echo "Applying config ${HOSTNAMES[@]:$node:1} to ${ROLES[@]:$node:1} at IP ${IPS[@]:$node:1}..."
-  # two-step apply config: Because Talos is borked after configuring (due to no cluster proxy) it will stay stuck in reboot...
   talosctl apply config \
            --file ${HOSTNAMES[@]:$node:1}.yaml \
            --nodes ${IPS[@]:$node:1} \
@@ -279,13 +278,14 @@ helm install longhorn longhorn/longhorn \
      --set defaultSettings.defaultDataPath=${LONGHORN_MOUNT} \
      --set namespaceOverride=${LONGHORN_NS}
 
+echo "Waiting for all Longhorn pods to be Running..."
 kubectl wait pod \
         --namespace ${LONGHORN_NS} \
         --for condition=Ready \
         --timeout 2m0s \
         --all
 
-echo "Add RuntimeClass for WASM runtimes..."
+echo "Adding RuntimeClass for WASM workloads..."
 kubectl apply -f - << EOF
 kind: RuntimeClass
 apiVersion: node.k8s.io/v1

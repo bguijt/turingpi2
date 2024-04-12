@@ -9,6 +9,7 @@
    - [yq](https://github.com/mikefarah/yq/#install)
 2. Make sure you have [Nico Berlee's Talos image](https://github.com/nberlee/talos/releases) downloaded (and extracted)
 3. Make sure you have a TuringPi 2 board, BMC updated to at least 2.0.5, 4 RK1 units installed and 4 M.2 NVMe SSD units attached.
+4. Make sure your RK1 units each have a fixed IP address.
 
 Let's go!
 
@@ -23,7 +24,7 @@ documentation page.
 
 I created the image with the following commands:
 
-```bash
+```sh
 $ EXTENSIONS_IMAGE=ghcr.io/bguijt/installer:v1.6.7-4
 
 $ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.6.7 installer \
@@ -78,7 +79,7 @@ ghcr.io/bguijt/installer@sha256:ee80b6250d6427a3f94610157c43b4fe768e7324846b94dd
 ```
 
 I can use the newly created image to install the extensions to a Talos RK1 board:
-```bash
+```sh
 $ talosctl upgrade -i $EXTENSIONS_IMAGE -n 192.168.1.111 --force
 watching nodes: [192.168.1.111]
     * 192.168.1.111: post check passed
@@ -101,5 +102,286 @@ Yay, it works!
 The script checks most of the prerequisites, **and starts flashing your RK1's immediately**.
 Sorry, no 'Are you sure' prompts. I only tested this on macOS Sonoma/14.
 
+Let's break the script down!
+
+### Configuring the script
+The script is setup with some values you will need to adjust for your setup:
+
+#### Constants
+```sh
+CLUSTERNAME=turingpi1
+IPS=(      "192.168.1.111" "192.168.1.112" "192.168.1.113" "192.168.1.114")
+HOSTNAMES=("talos-tp1-n1"  "talos-tp1-n2"  "talos-tp1-n3"  "talos-tp1-n4")
+ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
+ENDPOINT_IP="192.168.1.210"
+IMAGE=metal-turing_rk1-arm64_v1.6.7.raw
+
+LONGHORN_NS=longhorn-system
+LONGHORN_MOUNT=/var/mnt/longhorn
+
+INSTALLER=ghcr.io/bguijt/installer:v1.6.7-4
+```
+
+1. `CLUSTERNAME` is an arbitrary name, used as a label in your local client configuration.
+   It should be unique in the configuration on your local workstation. It is also used as
+   the name of the Kubernetes context you want to use.
+2. `IPS` is an array of IP addresses where the install script expects your RK1 nodes to be at.
+3. `HOSTNAMES` is an array of hostnames to be applied for each RK1 node.
+4. `ROLES` is an array of either `"controlplane"` or `"worker"` values determining the role for each RK1 node.
+   As far as I know, you can have only two variants of this array (when creating a 4-node cluster):
+   `("controlplane"  "controlplane"  "controlplane"  "worker")` or `("controlplane"  "worker"  "worker"  "worker")`.
+5. `ENDPOINT_IP` is a reserved IP address which is not used yet but out of reach for your router's DHCP service.
+6. `IMAGE` is the [Talos image you downloaded](https://github.com/nberlee/talos/releases).
+
+The rest of the variables can be left as-is:
+7. `LONGHORN_NS` is the Kubernetes namespace to use for Longhorn.
+8. `LONGHORN_MOUNT` is the mount point for Longhorn storage on each RK1 node.
+   I tried to work with `/var/lib/longhorn` at first, but got into some configuration issue.
+9. `INSTALLER` is the name of the Talos Installer image, the one mentioned above as `$EXTENSIONS_IMAGE`.
+
+#### Helm chart values for Cilium
+[Cilium](https://docs.cilium.io/en/stable/overview/intro/) is setup using their Helm chart, as follows:
+```sh
+helm repo add cilium https://helm.cilium.io/
+helm repo update cilium
+CILIUM_LATEST=$(helm search repo cilium --versions --output yaml | yq '.[0].version')
+helm install cilium cilium/cilium \
+     --version ${CILIUM_LATEST} \
+     --namespace kube-system \
+     --set ipam.mode=kubernetes \
+     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+     --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+     --set cgroup.autoMount.enabled=false \
+     --set cgroup.hostRoot=/sys/fs/cgroup \
+     --set l2announcements.enabled=true \
+     --set kubeProxyReplacement=true \
+     --set loadBalancer.acceleration=native \
+     --set k8sServiceHost=127.0.0.1 \
+     --set k8sServicePort=7445 \
+     --set bpf.masquerade=true \
+     --set ingressController.enabled=true \
+     --set ingressController.default=true \
+     --set ingressController.loadbalancerMode=dedicated
+```
+This configuration is copied from https://github.com/nberlee/talos/issues/1#issue-2110062342, and I added
+the last three options to [integrate/enable Cilium as Ingress controller](https://docs.cilium.io/en/stable/network/servicemesh/ingress/#gs-ingress).
+
+> **NOTE:** You might want to install the `cilium` cmd-line tool: [via homebrew](https://formulae.brew.sh/formula/cilium-cli)
+> or [from their website](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#install-the-cilium-cli).
+
+#### Helm chart values for Longhorn
+[Longhorn](https://longhorn.io) is providing the StorageClass to use in the Kubernetes cluster.
+Longhorn is installed as follows:
+```sh
+helm repo add longhorn https://charts.longhorn.io
+helm repo update longhorn
+LONGHORN_LATEST=$(helm search repo longhorn --versions --output yaml | yq '.[0].version')
+helm install longhorn longhorn/longhorn \
+     --namespace ${LONGHORN_NS} \
+     --create-namespace \
+     --version ${LONGHORN_LATEST} \
+     --set defaultSettings.defaultReplicaCount=2 \
+     --set defaultSettings.defaultDataLocality="best-effort" \
+     --set defaultSettings.defaultDataPath=${LONGHORN_MOUNT} \
+     --set namespaceOverride=${LONGHORN_NS}
+```
+I took most of the configuration from the [Talos Linux Support](https://longhorn.io/docs/1.6.1/advanced-resources/os-distro-specific/talos-linux-support/)
+page from Longhorn. To prevent a manual UI step, to actually let Longhorn manage the NVMe disks,
+I added some configuration to do this automatically (see [Helm values](https://longhorn.io/docs/1.6.1/advanced-resources/deploy/customizing-default-settings/#using-helm)),
+specifically a value for [defaultDataPath](https://longhorn.io/docs/1.6.1/references/settings/#default-data-path).
+
+### Some observations about the script
+#### Waiting for nodes to be 'ready'
+Throughout the script the process waits for the next step until a node is ready to accept a (talosctl)
+instruction. I tried several approaches (like using `tpi uart get -n <node>` and wait for a certain string)
+but waiting for port 50000 to be opened seemed the most reliable one:
+```sh
+until nc -zw 3 192.168.1.111 50000; do sleep 3; printf '.'; done
+```
+
+#### Bash vs ZSH
+Especially when working with Arrays I had some trouble getting the script to work properly because Bash
+and ZSH have different indices for the first element (`0` and `1`). By using `${IPS[@]:0:1}` I could
+consistently solve this.
+
+#### yq
+The `yq` tool is very useful to query and edit yaml files. The script uses it to remove 'old' Kubernetes
+and Talos configurations (from `~/.kube/config` and `~/.talos/config`), to 'fix' talosctl shortcomings and
+to query `helm` output.
+
+### Terminal video of an actual install
 Here is an Terminal video of the install (takes 35 minutes, but check the markers):
 [![asciicast](https://asciinema.org/a/653699.svg)](https://asciinema.org/a/653699)
+
+### Some observations about the install process
+#### Flashing the RK1 nodes - or talosctl reset?
+Regarding the Talos Image setup, I have a somewhat blunt approach here: The RK1 units are flashed
+no matter whether a Talos version is already running. A tried with a `talosctl reset` command instead, but
+got inconsistent results - so I left it like this.
+
+#### Why do I have to use BOTH an ISO image and an Installer?
+I have not figured out (yet) how to create an ISO image with the same extensions I need for this setup.
+
+I tried with:
+```sh
+docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.6.7 iso \
+       --arch arm64 \
+       --board turing_rk1 \
+       --platform metal \
+       --base-installer-image ghcr.io/nberlee/installer:v1.6.7-rk3588 \
+       --system-extension-image ghcr.io/nberlee/rk3588:v1.6.7@sha256:a2aff0ad1e74772b520aaf29818022a78a78817732f9c4b776ce7662ed4d5966 \
+       --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:7994c95dc83ad778cc093c524cc65c93893a6d388c57c23d6819bc249dba322c \
+       --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:5b2aff11da74fe77e0fd0242bdc22c94db7dd395c3d79519186bd3028ae605a8 \
+       --system-extension-image ghcr.io/siderolabs/util-linux-tools:v1.6.7@sha256:d7499e2be241eacdb9f390839578448732facedd4ef766bf20377e49b335bb3e \
+       --extra-kernel-arg sysctl.kernel.kexec_load_disabled=1 \
+       --extra-kernel-arg cma=128MB \
+       --extra-kernel-arg irqchip.gicv3_pseudo_nmi=0
+```
+but the resulting image is just 150MB old, compared to the 1.2GB size of @nberlee's image.
+
+### Accessing the Longhorn Dashboard
+The quickest way to access the [Longhorn Dashboard](https://longhorn.io/docs/1.6.1/nodes-and-volumes/nodes/node-space-usage/)
+is by opening a local port to the longhorn-frontend service:
+```sh
+$ kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
+Forwarding from 127.0.0.1:8080 -> 8000
+Forwarding from [::1]:8080 -> 8000
+```
+Now you can open the [Longhorn Dashboard](http://localhost:8080/)!
+
+### Running a WASM / WebAssembly workload
+You can run a WASM image as follows (I use `wasmedge/example-wasi:latest` as an example). Create a file
+named `wasm-test.yaml`:
+```yaml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: wasmedge-test
+spec:
+  restartPolicy: Never
+  runtimeClassName: wasm
+  containers:
+  - name: wasmedge-test
+    image: wasmedge/example-wasi:latest
+```
+
+Deploy that yaml file with:
+```sh
+$ kubectl apply -f wasm-test.yaml
+Warning: would violate PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "wasmedge-test" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "wasmedge-test" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "wasmedge-test" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "wasmedge-test" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+pod/wasmedge-test created
+```
+Don't worry about the warnings, the pod is still deployed. If you want to get rid of those, add the following
+`securityContext` to `wasm-test.yaml`:
+```yaml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: wasmedge-test
+spec:
+  restartPolicy: Never
+  runtimeClassName: wasm
+  containers:
+  - name: wasmedge-test
+    image: wasmedge/example-wasi:latest
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsNonRoot: true
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+```
+
+You can see the details of the pod as follows:
+```sh
+$ kubectl describe pod wasmedge-test
+Name:                wasmedge-test
+Namespace:           default
+Priority:            0
+Runtime Class Name:  wasm
+Service Account:     default
+Node:                talos-tp1-n1/192.168.1.111
+Start Time:          Fri, 12 Apr 2024 12:26:50 +0200
+Labels:              <none>
+Annotations:         <none>
+Status:              Succeeded
+IP:                  10.244.1.203
+IPs:
+  IP:  10.244.1.203
+Containers:
+  wasmedge-test:
+    Container ID:   containerd://931582165249cfde2e72626430bffffe9af1fdf21e039d3a6f8a416f3172da3c
+    Image:          wasmedge/example-wasi:latest
+    Image ID:       docker.io/wasmedge/example-wasi@sha256:93e459b5a06630acdc486600549c2722be11a985ffd48a349ee811053c60ac13
+    Port:           <none>
+    Host Port:      <none>
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Fri, 12 Apr 2024 12:26:55 +0200
+      Finished:     Fri, 12 Apr 2024 12:26:55 +0200
+    Ready:          False
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-zxrfc (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   False
+  Initialized                 True
+  Ready                       False
+  ContainersReady             False
+  PodScheduled                True
+Volumes:
+  kube-api-access-zxrfc:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  4m53s  default-scheduler  Successfully assigned default/wasmedge-test to talos-tp1-n1
+  Normal  Pulling    4m51s  kubelet            Pulling image "wasmedge/example-wasi:latest"
+  Normal  Pulled     4m48s  kubelet            Successfully pulled image "wasmedge/example-wasi:latest" in 2.489s (2.489s including waiting)
+  Normal  Created    4m48s  kubelet            Created container wasmedge-test
+  Normal  Started    4m48s  kubelet            Started container wasmedge-test
+```
+Yay, it works!
+
+View its console output with this:
+```sh
+$ kubectl logs wasmedge-test
+Random number: 2103935506
+Random bytes: [153, 48, 197, 182, 147, 245, 246, 194, 117, 191, 103, 44, 127, 242, 32, 80, 47, 173, 120, 234, 121, 50, 128, 213, 8, 27, 250, 127, 201, 67, 108, 10, 231, 74, 159, 23, 230, 32, 81, 26, 255, 112, 6, 1, 191, 95, 155, 228, 143, 30, 66, 209, 196, 247, 105, 121, 112, 91, 67, 98, 255, 241, 196, 14, 175, 120, 51, 152, 57, 238, 73, 177, 53, 119, 41, 98, 119, 10, 224, 60, 245, 11, 109, 42, 86, 108, 197, 179, 74, 18, 101, 168, 225, 227, 28, 233, 232, 62, 221, 12, 70, 116, 62, 53, 232, 99, 30, 172, 171, 135, 46, 218, 182, 88, 7, 3, 4, 76, 99, 45, 79, 209, 84, 24, 101, 73, 67, 14]
+Printed from wasi: This is from a main function
+This is from a main function
+The env vars are as follows.
+KUBERNETES_SERVICE_PORT_HTTPS: 443
+KUBERNETES_PORT_443_TCP: tcp://10.96.0.1:443
+KUBERNETES_PORT: tcp://10.96.0.1:443
+HOSTNAME: wasmedge-test
+KUBERNETES_PORT_443_TCP_PROTO: tcp
+KUBERNETES_PORT_443_TCP_PORT: 443
+KUBERNETES_SERVICE_HOST: 10.96.0.1
+KUBERNETES_PORT_443_TCP_ADDR: 10.96.0.1
+KUBERNETES_SERVICE_PORT: 443
+PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+The args are as follows.
+/wasi_example_main.wasm
+File content is This is in a file
+```
+
+Since the Pod is 'Completed', we can safely delete it:
+```sh
+$ kubectl delete pod wasmedge-test
+pod "wasmedge-test" deleted
+```
