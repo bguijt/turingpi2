@@ -136,9 +136,10 @@ $ curl -s -v http://192.168.50.129/
 * Closing connection
 ```
 
-BGP can only do its job if the IP request is going through the router/gateway. One way to force this is to use a dedicated
-VLAN just for the TuringPi2 board. This exposes a Virtual Gateway which we will configure as a BGP 'neighbor' enabling
-all our IP needs.
+BGP configuration is missing at this point.
+For BGP to do its job, it needs the IP request to go through the gateway.
+One way to force this is to use a dedicated VLAN just for the TuringPi2 board - this exposes
+a Virtual Gateway which we will configure as a BGP 'neighbor' enabling all our IP needs.
 
 I applied the following [CiliumBGPPeeringPolicy](https://docs.cilium.io/en/latest/network/bgp-control-plane/) resource:
 ```yaml
@@ -288,7 +289,7 @@ $ curl -s -v http://192.168.50.129/
 ...etc.
 ```
 
-It works!
+Yay, it works!
 
 ```console
 $ cilium bgp peers
@@ -304,9 +305,13 @@ talos-tp1-n4   64512      64512     192.168.50.1   established     13h37m14s   i
 ```
 
 ## Script
-To setup the BGP parts automatically (meaning, a `CiliumLoadBalancerIPPool`, a `CiliumBGPPeeringPolicy`,
-Kubernetes Node labels and the Ubiquiti USG BGP configuration),
-I created a script which does exactly that: [bgp-setup.sh](bgp-setup.sh).
+The configuration consists of four parts:
+1. a `CiliumLoadBalancerIPPool`
+2. a `CiliumBGPPeeringPolicy`
+3. assigned Kubernetes Node labels
+4. Ubiquiti USG BGP configuration
+
+To setup these BGP parts automatically, I created a shell script: [bgp-setup.sh](bgp-setup.sh).
 
 You only need to change the configuration variables at the top, and you are good to go.
 Before running, make sure you have the SSH password ready to the Ubiquiti USG Gateway,
