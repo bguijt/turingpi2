@@ -1,10 +1,11 @@
 #!/bin/sh
 
 CLUSTERNAME=turingpi1
-IPS=(      "192.168.1.111" "192.168.1.112" "192.168.1.113" "192.168.1.114")
+IPS=(      "192.168.50.11" "192.168.50.12" "192.168.50.13" "192.168.50.14")
 HOSTNAMES=("talos-tp1-n1"  "talos-tp1-n2"  "talos-tp1-n3"  "talos-tp1-n4")
 ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
-ENDPOINT_IP="192.168.1.210"
+ALLOW_SCHEDULING_ON_CONTROLPLANE=true
+ENDPOINT_IP="192.168.50.2"
 IMAGE=metal-turing_rk1-arm64_v1.6.7.raw
 
 LONGHORN_NS=longhorn-system
@@ -139,9 +140,9 @@ cat << EOF >> ${CLUSTERNAME}-controlplane-patch.yaml
 # Misc:
 - op: add
   path: /cluster/allowSchedulingOnControlPlanes
-  value: true
+  value: $ALLOW_SCHEDULING_ON_CONTROLPLANE
 
-# Longhorn:
+# Exempt Longhorn namespace from admission control (next to 'kube-system'):
 - op: add
   path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces/-
   value: $LONGHORN_NS
@@ -183,11 +184,11 @@ for node in 0 1 2 3; do
            --insecure
 done
 
-echo "Merging Talos configs..."
 if [ -f ~/.talos/config ]; then
   echo "First, remove old Talos config for ${CLUSTERNAME}..."
   yq -i e "del(.contexts.${CLUSTERNAME})" ~/.talos/config
 fi
+echo "Merging Talos configs..."
 talosctl config merge ./talosconfig --nodes $(echo ${IPS[@]} | tr ' ' ',')
 # Replace 127.0.0.1 endpoint with the IP of the first node (ENDPOINT_IP is not available yet):
 yq -i e ".contexts.${CLUSTERNAME}.endpoints += [\"${IPS[@]:0:1}\"]" ~/.talos/config
@@ -256,7 +257,10 @@ helm install cilium cilium/cilium \
      --set bpf.masquerade=true \
      --set ingressController.enabled=true \
      --set ingressController.default=true \
-     --set ingressController.loadbalancerMode=dedicated
+     --set ingressController.loadbalancerMode=dedicated \
+     --set bgpControlPlane.enabled=true \
+     --set hubble.relay.enabled=true \
+     --set hubble.ui.enabled=true
 
 echo "Waiting for all Cilium pods to be Running..."
 kubectl wait pod \
@@ -264,6 +268,10 @@ kubectl wait pod \
         --for condition=Ready \
         --timeout 2m0s \
         --all
+if type cilium &> /dev/null; then
+  cilium version
+  cilium status
+fi
 
 helm repo add longhorn https://charts.longhorn.io
 helm repo update longhorn
