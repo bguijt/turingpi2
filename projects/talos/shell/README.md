@@ -24,6 +24,15 @@ storage and for running WASM workloads. I followed instructions largely from Tal
 [Boot Assets](https://www.talos.dev/v1.6/talos-guides/install/boot-assets/#example-bare-metal-with-imager)
 documentation page.
 
+The extensions I need are the following:
+
+| Name/Homepage                                                                             | Package sourced from                                                                          | Purpose                                                   |
+|-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| [rk3588](https://github.com/nberlee/extensions/tree/release-1.6.7/sbcs/rk3588)            | https://github.com/nberlee/extensions/pkgs/container/rk3588/194190019?tag=v1.6.7              | RK1 unit kernel modules                                   |
+| [WasmEdge](https://github.com/siderolabs/extensions/tree/main/container-runtime/wasmedge) | https://github.com/siderolabs/extensions/pkgs/container/wasmedge/210789564?tag=v0.3.0         | RuntimeClass for WASM workloads                           |
+| [iscsi-tools](https://github.com/siderolabs/extensions/tree/main/storage/iscsi-tools)     | https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools/210789165?tag=v0.1.4      | Provides iscsi-tools for (Longhorn) storage provider      |
+| [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/144076791?tag=v1.6.7 | Provides Util Linux tools for (Longhorn) storage provider |
+
 I created the image with the following commands:
 
 ```sh
@@ -112,10 +121,10 @@ The script is setup with some values you will need to adjust for your setup:
 #### Constants
 ```sh
 CLUSTERNAME=turingpi1
-IPS=(      "192.168.1.111" "192.168.1.112" "192.168.1.113" "192.168.1.114")
+IPS=(      "192.168.50.11" "192.168.50.12" "192.168.50.13" "192.168.50.14")
 HOSTNAMES=("talos-tp1-n1"  "talos-tp1-n2"  "talos-tp1-n3"  "talos-tp1-n4")
 ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
-ENDPOINT_IP="192.168.1.210"
+ENDPOINT_IP="192.168.50.2"
 IMAGE=metal-turing_rk1-arm64_v1.6.7.raw
 
 LONGHORN_NS=longhorn-system
@@ -124,16 +133,16 @@ LONGHORN_MOUNT=/var/mnt/longhorn
 INSTALLER=ghcr.io/bguijt/installer:v1.6.7-4
 ```
 
-1. `CLUSTERNAME` is an arbitrary name, used as a label in your local client configuration.
-   It should be unique in the configuration on your local workstation. It is also used as
-   the name of the Kubernetes context you want to use.
+1. `CLUSTERNAME` is an arbitrary name, used as a label in your local client configuration
+   and as kubernetes context name. It should be unique in the configuration on your local
+   workstation.
 2. `IPS` is an array of IP addresses where the install script expects your RK1 nodes to be at.
 3. `HOSTNAMES` is an array of hostnames to be applied for each RK1 node.
 4. `ROLES` is an array of either `"controlplane"` or `"worker"` values determining the role for each RK1 node.
    As far as I know, you can have only two variants of this array (when creating a 4-node cluster):
    `("controlplane" "controlplane" "controlplane" "worker")` or `("controlplane" "worker" "worker" "worker")`,
-   either 3 or 1 controlplane nodes. Read [Why should a Kubernetes control plane be three nodes?](https://www.siderolabs.com/blog/why-should-a-kubernetes-control-plane-be-three-nodes/)
-   for my choice of using three control plane nodes.
+   either 3 or 1 ControlPlane nodes. Read [Why should a Kubernetes control plane be three nodes?](https://www.siderolabs.com/blog/why-should-a-kubernetes-control-plane-be-three-nodes/)
+   for my choice of using three ControlPlane nodes.
 5. `ENDPOINT_IP` is a reserved IP address which is not used yet but out of reach for your router's DHCP service.
 6. `IMAGE` is the [Talos image you downloaded](https://github.com/nberlee/talos/releases).
 
@@ -189,6 +198,7 @@ helm install longhorn longhorn/longhorn \
      --set defaultSettings.defaultDataPath=${LONGHORN_MOUNT} \
      --set namespaceOverride=${LONGHORN_NS}
 ```
+
 I took most of the configuration from the [Talos Linux Support](https://longhorn.io/docs/1.6.1/advanced-resources/os-distro-specific/talos-linux-support/)
 page from Longhorn. To prevent a manual UI step, to actually let Longhorn manage the NVMe disks,
 I added some configuration to do this automatically (see [Helm values](https://longhorn.io/docs/1.6.1/advanced-resources/deploy/customizing-default-settings/#using-helm)),
@@ -214,7 +224,7 @@ and Talos configurations (from `~/.kube/config` and `~/.talos/config`), to 'fix'
 to query `helm` output.
 
 ### Terminal video of an actual install
-Here is an Terminal video of the install (takes 35 minutes, but check the markers):
+Here is a Terminal video of the install (takes 35 minutes, but check the markers):
 [![asciicast](https://asciinema.org/a/653699.svg)](https://asciinema.org/a/653699)
 
 ### Some observations about the install process
