@@ -217,7 +217,9 @@ fi
 talosctl kubeconfig --nodes ${IPS[@]:0:1}
 
 echo "Waiting until nodes are ready..."
+# Wel, ready... we like 'NotReady' as well because at least the API service is responsive:
 until kubectl get nodes | grep -qF "Ready"; do sleep 3; done
+#kubectl wait nodes --for condition=Ready --all --timeout 5m0s
 
 echo "Kubernetes nodes installed:"
 kubectl get nodes -o wide

@@ -264,5 +264,5 @@ Forwarding from [::1]:8080 -> 8000
 Now you can open the [Longhorn Dashboard](http://localhost:8080/)!
 
 ## Next Steps
-- [Running WASM workloads](../wasm/README.md)
-- [BGP setup for advertising LoadBalancer IP's](../bgp/README.md)
+- [Running WASM workloads](wasm/README.md)
+- [BGP setup for advertising LoadBalancer IP's](bgp/README.md)
