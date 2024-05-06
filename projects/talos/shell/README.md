@@ -99,11 +99,11 @@ watching nodes: [192.168.50.11]
 
 $ talosctl get extensions -n 192.168.50.11
 NODE            NAMESPACE   TYPE              ID            VERSION   NAME               VERSION
-192.168.50.11   runtime     ExtensionStatus   0             1         rk3588-drivers     v1.6.7
+192.168.50.11   runtime     ExtensionStatus   0             1         rk3588-drivers     v1.7.1
 192.168.50.11   runtime     ExtensionStatus   1             1         wasmedge           v0.3.0
 192.168.50.11   runtime     ExtensionStatus   2             1         iscsi-tools        v0.1.4
-192.168.50.11   runtime     ExtensionStatus   3             1         util-linux-tools   $VERSION
-192.168.50.11   runtime     ExtensionStatus   modules.dep   1         modules.dep        6.6.22-talos
+192.168.50.11   runtime     ExtensionStatus   3             1         util-linux-tools   2.39.3
+192.168.50.11   runtime     ExtensionStatus   modules.dep   1         modules.dep        6.6.29-talos
 ```
 
 Yay, it works!
