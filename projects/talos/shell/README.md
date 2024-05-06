@@ -11,7 +11,7 @@
    commandline tool is of the same version as this image!** One way to deal with separate `talosctl` versions is by
    using [asdf](https://asdf-vm.com) and the [asdf-talosctl](https://github.com/bjw-s/asdf-talosctl) plugin, which I did.
 3. Make sure you have a TuringPi 2 board, BMC updated to at least 2.0.5, 4 RK1 units installed and 4 M.2 NVMe SSD units attached.
-4. Make sure your RK1 units each have a fixed IP address.
+4. Make sure your RK1 units each have a fixed IP address (preferably, for Cilium BGP, in their own VLAN).
 
 Let's go!
 
@@ -28,80 +28,82 @@ The extensions I need are the following:
 
 | Name/Homepage                                                                             | Package sourced from                                                                          | Purpose                                                   |
 |-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------|
-| [rk3588](https://github.com/nberlee/extensions/tree/release-1.6.7/sbcs/rk3588)            | https://github.com/nberlee/extensions/pkgs/container/rk3588/194190019?tag=v1.6.7              | RK1 unit kernel modules                                   |
+| [rk3588](https://github.com/nberlee/extensions/tree/release-1.7.1/sbcs/rk3588)            | https://github.com/nberlee/extensions/pkgs/container/rk3588/194190019?tag=v1.7.1              | RK1 unit kernel modules                                   |
 | [WasmEdge](https://github.com/siderolabs/extensions/tree/main/container-runtime/wasmedge) | https://github.com/siderolabs/extensions/pkgs/container/wasmedge/210789564?tag=v0.3.0         | RuntimeClass for WASM workloads                           |
 | [iscsi-tools](https://github.com/siderolabs/extensions/tree/main/storage/iscsi-tools)     | https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools/210789165?tag=v0.1.4      | Provides iscsi-tools for (Longhorn) storage provider      |
-| [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/144076791?tag=v1.6.7 | Provides Util Linux tools for (Longhorn) storage provider |
+| [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/144076791?tag=2.39.3 | Provides Util Linux tools for (Longhorn) storage provider |
 
 I created the image with the following commands:
 
 ```sh
-$ EXTENSIONS_IMAGE=ghcr.io/bguijt/installer:v1.6.7-4
+$ EXTENSIONS_IMAGE=ghcr.io/bguijt/installer:v1.7.1-1
 
-$ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.6.7 installer \
+$ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.1 installer \
          --arch arm64 \
          --board turing_rk1 \
          --platform metal \
-         --base-installer-image ghcr.io/nberlee/installer:v1.6.7-rk3588 \
-         --system-extension-image ghcr.io/nberlee/rk3588:v1.6.7@sha256:a2aff0ad1e74772b520aaf29818022a78a78817732f9c4b776ce7662ed4d5966 \
-         --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:7994c95dc83ad778cc093c524cc65c93893a6d388c57c23d6819bc249dba322c \
-         --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:5b2aff11da74fe77e0fd0242bdc22c94db7dd395c3d79519186bd3028ae605a8 \
-         --system-extension-image ghcr.io/siderolabs/util-linux-tools:v1.6.7@sha256:d7499e2be241eacdb9f390839578448732facedd4ef766bf20377e49b335bb3e
+         --base-installer-image ghcr.io/nberlee/installer:v1.7.1-rk3588 \
+         --system-extension-image ghcr.io/nberlee/rk3588:v1.7.1@sha256:239ef59bb67c48436e242fd9e39c3ef6b041e7becc1e59351d3e01495bb4e290 \
+         --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:fcc7b087d1f08cb65a715c23bedda113233574882b89026075028599b0cb0c37 \
+         --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:32d67987046ef28dcb9c54a6b34d6055eb6d78ac4ff78fa18dc6181cf31668be \
+         --system-extension-image ghcr.io/siderolabs/util-linux-tools:2.39.3@sha256:1cdfab848cc2a6c2515f33ea732ac8ca34fe1a79a8bd99db6287f937b948b8f2
 
+Unable to find image 'ghcr.io/nberlee/imager:v1.7.1' locally
+85e44a3b7a20: Download complete
+7904c8fdb6fa: Download complete
+86c9848ca5d5: Download complete
+3fa8b14eefc7: Download complete
+1b8e78ef434b: Download complete
+skipped pulling overlay (no overlay)
 profile ready:
 arch: arm64
 platform: metal
 board: turing_rk1
 secureboot: false
-version: v1.6.7
+version: v1.7.1
 input:
   kernel:
     path: /usr/install/arm64/vmlinuz
   initramfs:
     path: /usr/install/arm64/initramfs.xz
-  dtb:
-    path: /usr/install/arm64/dtb
-  uBoot:
-    path: /usr/install/arm64/u-boot
-  rpiFirmware:
-    path: /usr/install/arm64/raspberrypi-firmware
   baseInstaller:
-    imageRef: ghcr.io/nberlee/installer:v1.6.7-rk3588
+    imageRef: ghcr.io/nberlee/installer:v1.7.1-rk3588
   systemExtensions:
-    - imageRef: ghcr.io/nberlee/rk3588:v1.6.7@sha256:a2aff0ad1e74772b520aaf29818022a78a78817732f9c4b776ce7662ed4d5966
-    - imageRef: ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:7994c95dc83ad778cc093c524cc65c93893a6d388c57c23d6819bc249dba322c
-    - imageRef: ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:5b2aff11da74fe77e0fd0242bdc22c94db7dd395c3d79519186bd3028ae605a8
-    - imageRef: ghcr.io/siderolabs/util-linux-tools:v1.6.7@sha256:d7499e2be241eacdb9f390839578448732facedd4ef766bf20377e49b335bb3e
+    - imageRef: ghcr.io/nberlee/rk3588:v1.7.1@sha256:239ef59bb67c48436e242fd9e39c3ef6b041e7becc1e59351d3e01495bb4e290
+    - imageRef: ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:fcc7b087d1f08cb65a715c23bedda113233574882b89026075028599b0cb0c37
+    - imageRef: ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:32d67987046ef28dcb9c54a6b34d6055eb6d78ac4ff78fa18dc6181cf31668be
+    - imageRef: ghcr.io/siderolabs/util-linux-tools:2.39.3@sha256:1cdfab848cc2a6c2515f33ea732ac8ca34fe1a79a8bd99db6287f937b948b8f2
 output:
   kind: installer
   outFormat: raw
 initramfs ready
-kernel command line: talos.platform=metal console=tty0 console=ttyS9,115200 console=ttyS2,115200 talos.board=turing_rk1 sysctl.kernel.kexec_load_disabled=1 talos.dashboard.disabled=1 cma=128MB init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on ima_template=ima-ng ima_appraise=fix ima_hash=sha512
+kernel command line: talos.platform=metal console=ttyAMA0 console=tty0 init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on ima_template=ima-ng ima_appraise=fix ima_hash=sha512
 installer container image ready
 output asset path: /out/installer-arm64.tar
 
 $ crane push _out/installer-arm64.tar $EXTENSIONS_IMAGE
-2024/04/05 19:57:33 existing blob: sha256:288172aa1c94703c1e6710edb54723f3e18a23934bb62a78dad7cd2fd90059a9
-2024/04/05 19:57:34 pushed blob: sha256:9d21bcaef8ca3c793c05007dcfd4354c279e085fdbbb19d9e42633fe65f40740
-
-2024/04/05 20:02:38 pushed blob: sha256:9cf6300c5b09a03318de83505b1d0d203fc31b9dff14d5ce982e8028e0b3527c
-2024/04/05 20:02:38 ghcr.io/bguijt/installer:v1.6.7-4: digest: sha256:ee80b6250d6427a3f94610157c43b4fe768e7324846b94dddc9843aba7f85de0 size: 594
-ghcr.io/bguijt/installer@sha256:ee80b6250d6427a3f94610157c43b4fe768e7324846b94dddc9843aba7f85de0
+2024/05/06 14:26:27 pushed blob: sha256:dd3436db023853039ca989968fe31a532566c38e78c6b70d34aea5964f3f9bdf
+2024/05/06 14:26:28 pushed blob: sha256:1073a8b225959d90cbb9c741ef422467ac35c56b68f223bcaa475837b9df6424
+2024/05/06 14:26:39 pushed blob: sha256:1b8e78ef434bb1c7b894f69f3e9d6633b3639d67399a1e2b8c8b74ab40ddf202
+2024/05/06 14:26:42 pushed blob: sha256:e8077886d35266c85011b988b839d20fca66d2054b56224e1ba7a806467a3e00
+2024/05/06 14:27:09 pushed blob: sha256:ff680e53dae055157dc62c94480ef2eb79566e894b28e096a4709420d2fe34ed
+2024/05/06 14:27:10 ghcr.io/bguijt/installer:v1.7.1-1: digest: sha256:bd1a32e1705438c76cdc7942f199ca9229b691ba15401adb8ede8f4b2d0fad2e size: 923
+ghcr.io/bguijt/installer@sha256:bd1a32e1705438c76cdc7942f199ca9229b691ba15401adb8ede8f4b2d0fad2e
 ```
 
 I can use the newly created image to install the extensions to a Talos RK1 board:
 ```sh
-$ talosctl upgrade -i $EXTENSIONS_IMAGE -n 192.168.1.111 --force
-watching nodes: [192.168.1.111]
-    * 192.168.1.111: post check passed
+$ talosctl upgrade -i $EXTENSIONS_IMAGE -n 192.168.50.11 --force
+watching nodes: [192.168.50.11]
+    * 192.168.50.11: post check passed
 
-$ talosctl get extensions -n 192.168.1.111
+$ talosctl get extensions -n 192.168.50.11
 NODE            NAMESPACE   TYPE              ID            VERSION   NAME               VERSION
-192.168.1.111   runtime     ExtensionStatus   0             1         rk3588-drivers     v1.6.7
-192.168.1.111   runtime     ExtensionStatus   1             1         wasmedge           v0.3.0
-192.168.1.111   runtime     ExtensionStatus   2             1         iscsi-tools        v0.1.4
-192.168.1.111   runtime     ExtensionStatus   3             1         util-linux-tools   $VERSION
-192.168.1.111   runtime     ExtensionStatus   modules.dep   1         modules.dep        6.6.22-talos
+192.168.50.11   runtime     ExtensionStatus   0             1         rk3588-drivers     v1.6.7
+192.168.50.11   runtime     ExtensionStatus   1             1         wasmedge           v0.3.0
+192.168.50.11   runtime     ExtensionStatus   2             1         iscsi-tools        v0.1.4
+192.168.50.11   runtime     ExtensionStatus   3             1         util-linux-tools   $VERSION
+192.168.50.11   runtime     ExtensionStatus   modules.dep   1         modules.dep        6.6.22-talos
 ```
 
 Yay, it works!
@@ -125,12 +127,12 @@ IPS=(      "192.168.50.11" "192.168.50.12" "192.168.50.13" "192.168.50.14")
 HOSTNAMES=("talos-tp1-n1"  "talos-tp1-n2"  "talos-tp1-n3"  "talos-tp1-n4")
 ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
 ENDPOINT_IP="192.168.50.2"
-IMAGE=metal-turing_rk1-arm64_v1.6.7.raw
+IMAGE=metal-turing_rk1-arm64_v1.7.1.raw
 
 LONGHORN_NS=longhorn-system
 LONGHORN_MOUNT=/var/mnt/longhorn
 
-INSTALLER=ghcr.io/bguijt/installer:v1.6.7-4
+INSTALLER=ghcr.io/bguijt/installer:v1.7.1-1
 ```
 
 1. `CLUSTERNAME` is an arbitrary name, used as a label in your local client configuration
@@ -210,7 +212,7 @@ Throughout the script the process waits for the next step until a node is ready 
 instruction. I tried several approaches (like using `tpi uart get -n <node>` and wait for a certain string)
 but waiting for port 50000 to be opened seemed the most reliable one:
 ```sh
-until nc -zw 3 192.168.1.111 50000; do sleep 3; printf '.'; done
+until nc -zw 3 192.168.50.11 50000; do sleep 3; printf '.'; done
 ```
 
 #### Bash vs ZSH
@@ -238,20 +240,20 @@ I have not figured out (yet) how to create an ISO image with the same extensions
 
 I tried with:
 ```sh
-docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.6.7 iso \
+docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.1 iso \
        --arch arm64 \
        --board turing_rk1 \
        --platform metal \
-       --base-installer-image ghcr.io/nberlee/installer:v1.6.7-rk3588 \
-       --system-extension-image ghcr.io/nberlee/rk3588:v1.6.7@sha256:a2aff0ad1e74772b520aaf29818022a78a78817732f9c4b776ce7662ed4d5966 \
-       --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:7994c95dc83ad778cc093c524cc65c93893a6d388c57c23d6819bc249dba322c \
-       --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:5b2aff11da74fe77e0fd0242bdc22c94db7dd395c3d79519186bd3028ae605a8 \
-       --system-extension-image ghcr.io/siderolabs/util-linux-tools:v1.6.7@sha256:d7499e2be241eacdb9f390839578448732facedd4ef766bf20377e49b335bb3e \
+       --base-installer-image ghcr.io/nberlee/installer:v1.7.1-rk3588 \
+       --system-extension-image ghcr.io/nberlee/rk3588:v1.7.1@sha256:239ef59bb67c48436e242fd9e39c3ef6b041e7becc1e59351d3e01495bb4e290 \
+       --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:fcc7b087d1f08cb65a715c23bedda113233574882b89026075028599b0cb0c37 \
+       --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:32d67987046ef28dcb9c54a6b34d6055eb6d78ac4ff78fa18dc6181cf31668be \
+       --system-extension-image ghcr.io/siderolabs/util-linux-tools:2.39.3@sha256:1cdfab848cc2a6c2515f33ea732ac8ca34fe1a79a8bd99db6287f937b948b8f2 \
        --extra-kernel-arg sysctl.kernel.kexec_load_disabled=1 \
        --extra-kernel-arg cma=128MB \
        --extra-kernel-arg irqchip.gicv3_pseudo_nmi=0
 ```
-but the resulting image is just 150MB old, compared to the 1.2GB size of @nberlee's image.
+but the resulting image is just 158MB old, compared to the 1.2GB size of @nberlee's image.
 
 ### Accessing the Longhorn Dashboard
 The quickest way to access the [Longhorn Dashboard](https://longhorn.io/docs/1.6.1/nodes-and-volumes/nodes/node-space-usage/)

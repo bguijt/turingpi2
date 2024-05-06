@@ -6,23 +6,23 @@ HOSTNAMES=("talos-tp1-n1"  "talos-tp1-n2"  "talos-tp1-n3"  "talos-tp1-n4")
 ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
 ALLOW_SCHEDULING_ON_CONTROLPLANE=true
 ENDPOINT_IP="192.168.50.2"
-IMAGE=metal-turing_rk1-arm64_v1.6.7.raw
+IMAGE=metal-turing_rk1-arm64_v1.7.1.raw
 
 LONGHORN_NS=longhorn-system
 LONGHORN_MOUNT=/var/mnt/longhorn
 
-INSTALLER=ghcr.io/bguijt/installer:v1.6.7-4
+INSTALLER=ghcr.io/bguijt/installer:v1.7.1-1
 # INSTALLER Image is created by the following commands:
 #
-# docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.6.7 installer \
+# docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.1 installer \
 #        --arch arm64 \
 #        --board turing_rk1 \
 #        --platform metal \
-#        --base-installer-image ghcr.io/nberlee/installer:v1.6.7-rk3588 \
-#        --system-extension-image ghcr.io/nberlee/rk3588:v1.6.7@sha256:a2aff0ad1e74772b520aaf29818022a78a78817732f9c4b776ce7662ed4d5966 \
-#        --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:7994c95dc83ad778cc093c524cc65c93893a6d388c57c23d6819bc249dba322c \
-#        --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:5b2aff11da74fe77e0fd0242bdc22c94db7dd395c3d79519186bd3028ae605a8 \
-#        --system-extension-image ghcr.io/siderolabs/util-linux-tools:v1.6.7@sha256:d7499e2be241eacdb9f390839578448732facedd4ef766bf20377e49b335bb3e
+#        --base-installer-image ghcr.io/nberlee/installer:v1.7.1-rk3588 \
+#        --system-extension-image ghcr.io/nberlee/rk3588:v1.7.1@sha256:239ef59bb67c48436e242fd9e39c3ef6b041e7becc1e59351d3e01495bb4e290 \
+#        --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:fcc7b087d1f08cb65a715c23bedda113233574882b89026075028599b0cb0c37 \
+#        --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:32d67987046ef28dcb9c54a6b34d6055eb6d78ac4ff78fa18dc6181cf31668be \
+#        --system-extension-image ghcr.io/siderolabs/util-linux-tools:2.39.3@sha256:1cdfab848cc2a6c2515f33ea732ac8ca34fe1a79a8bd99db6287f937b948b8f2
 #
 # crane push _out/installer-arm64.tar ${INSTALLER}
 

@@ -52,31 +52,31 @@ Namespace:           default
 Priority:            0
 Runtime Class Name:  wasm
 Service Account:     default
-Node:                talos-tp1-n1/192.168.1.111
-Start Time:          Fri, 12 Apr 2024 12:26:50 +0200
+Node:                talos-tp1-n1/192.168.50.11
+Start Time:          Mon, 06 May 2024 16:00:22 +0200
 Labels:              <none>
 Annotations:         <none>
 Status:              Succeeded
-IP:                  10.244.1.203
-IPs:
-  IP:  10.244.1.203
+IP:
+IPs:                 <none>
 Containers:
   wasmedge-test:
-    Container ID:   containerd://931582165249cfde2e72626430bffffe9af1fdf21e039d3a6f8a416f3172da3c
-    Image:          wasmedge/example-wasi:latest
-    Image ID:       docker.io/wasmedge/example-wasi@sha256:93e459b5a06630acdc486600549c2722be11a985ffd48a349ee811053c60ac13
-    Port:           <none>
-    Host Port:      <none>
-    State:          Terminated
-      Reason:       Completed
-      Exit Code:    0
-      Started:      Fri, 12 Apr 2024 12:26:55 +0200
-      Finished:     Fri, 12 Apr 2024 12:26:55 +0200
-    Ready:          False
-    Restart Count:  0
-    Environment:    <none>
+    Container ID:    containerd://77bb53560aca3871171527bfd02fbeda15d6fcda945c2da0b8556ff78055e247
+    Image:           wasmedge/example-wasi:latest
+    Image ID:        docker.io/wasmedge/example-wasi@sha256:93e459b5a06630acdc486600549c2722be11a985ffd48a349ee811053c60ac13
+    Port:            <none>
+    Host Port:       <none>
+    SeccompProfile:  RuntimeDefault
+    State:           Terminated
+      Reason:        Completed
+      Exit Code:     0
+      Started:       Mon, 06 May 2024 16:00:28 +0200
+      Finished:      Mon, 06 May 2024 16:00:28 +0200
+    Ready:           False
+    Restart Count:   0
+    Environment:     <none>
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-zxrfc (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-nt2qj (ro)
 Conditions:
   Type                        Status
   PodReadyToStartContainers   False
@@ -85,7 +85,7 @@ Conditions:
   ContainersReady             False
   PodScheduled                True
 Volumes:
-  kube-api-access-zxrfc:
+  kube-api-access-nt2qj:
     Type:                    Projected (a volume that contains injected data from multiple sources)
     TokenExpirationSeconds:  3607
     ConfigMapName:           kube-root-ca.crt
@@ -96,13 +96,13 @@ Node-Selectors:              <none>
 Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
                              node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
 Events:
-  Type    Reason     Age    From               Message
-  ----    ------     ----   ----               -------
-  Normal  Scheduled  4m53s  default-scheduler  Successfully assigned default/wasmedge-test to talos-tp1-n1
-  Normal  Pulling    4m51s  kubelet            Pulling image "wasmedge/example-wasi:latest"
-  Normal  Pulled     4m48s  kubelet            Successfully pulled image "wasmedge/example-wasi:latest" in 2.489s (2.489s including waiting)
-  Normal  Created    4m48s  kubelet            Created container wasmedge-test
-  Normal  Started    4m48s  kubelet            Started container wasmedge-test
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  8s    default-scheduler  Successfully assigned default/wasmedge-test to talos-tp1-n1
+  Normal  Pulling    5s    kubelet            Pulling image "wasmedge/example-wasi:latest"
+  Normal  Pulled     3s    kubelet            Successfully pulled image "wasmedge/example-wasi:latest" in 2.673s (2.673s including waiting). Image size: 524009 bytes.
+  Normal  Created    3s    kubelet            Created container wasmedge-test
+  Normal  Started    2s    kubelet            Started container wasmedge-test
 ```
 Yay, it works!
 

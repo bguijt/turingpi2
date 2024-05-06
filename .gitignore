@@ -1,1 +1,5 @@
 /.idea/
+/projects/talos/shell/*.yaml
+/projects/talos/shell/*.raw
+/projects/talos/shell/_out/
+/projects/talos/shell/talosconfig
