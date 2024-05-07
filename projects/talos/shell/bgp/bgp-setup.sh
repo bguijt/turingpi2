@@ -13,9 +13,14 @@ AS=64512
 NODE_LABEL_KEY="bgp-policy"
 NODE_LABEL_VALUE="lb"
 
+if ! type kubectl &> /dev/null; then
+  echo "*** kubectl must be installed! Install 'kubectl': https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/ ***"
+  exit 1
+fi
+
 # Collect the names and IPs of Nodes at which we can schedule workloads:
 NODE_IPS=$(kubectl get nodes --field-selector spec.unschedulable=false --output jsonpath='{.items[*].status.addresses[?(@.type=="InternalIP")].address}')
-NODE_NAMES=$(kubectl get nodes --field-selector spec.unschedulable=false --output custom-columns=NAME:.metadata.name --no-headers)
+NODE_NAMES=$(kubectl get nodes --output name)
 
 echo "Configure CiliumLoadBalancerIPPool..."
 kubectl apply -f - << EOF
@@ -50,13 +55,13 @@ spec:
 EOF
 
 echo "Label nodes ${NODE_LABEL_KEY}=${NODE_LABEL_VALUE}..."
-LABELED_NODES=$(kubectl get nodes --selector "${NODE_LABEL_KEY}=${NODE_LABEL_VALUE}" --output custom-columns=NAME:.metadata.name --no-headers)
+LABELED_NODES=$(kubectl get nodes --selector "${NODE_LABEL_KEY}=${NODE_LABEL_VALUE}" --output name)
 for node in $NODE_NAMES; do
   if [[ $LABELED_NODES =~ (^|[[:space:]])"$node"($|[[:space:]]) ]]; then
     # Just want to prevent confusing "node/$node not labeled" messages here:
     echo "Node $node already labeled - ignoring"
   else
-    kubectl label node/$node ${NODE_LABEL_KEY}=${NODE_LABEL_VALUE}
+    kubectl label $node ${NODE_LABEL_KEY}=${NODE_LABEL_VALUE}
   fi
 done
 
@@ -73,5 +78,9 @@ show protocols
 exit
 EOF
 
-echo "Testing result:"
-cilium bgp peers
+if type cilium &> /dev/null; then
+  echo "Testing result:"
+  cilium bgp peers
+else
+  echo "Cannot test Cilium BGP - cmd-line cilium tool not installed."
+fi

@@ -176,6 +176,7 @@ for node in 0 1 2 3; do
 done
 
 for node in 0 1 2 3; do
+  printf "Waiting for node #$((node+1)) to be ready..."
   until nc -zw 3 ${IPS[@]:$node:1} 50000; do sleep 3; printf '.'; done
   echo "Applying config ${HOSTNAMES[@]:$node:1} to ${ROLES[@]:$node:1} at IP ${IPS[@]:$node:1}..."
   talosctl apply config \

@@ -7,11 +7,15 @@
    - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
    - [helm](https://helm.sh/docs/intro/install/)
    - [yq](https://github.com/mikefarah/yq/#install)
+   - If you want to assemble a Talos image yourself: [docker](https://www.docker.com/products/docker-desktop/)
+     > **NOTE:** *Docker* can be Docker Desktop or any alternative that works with a `docker` cmd line interface, e.g.
+       [Colima](https://github.com/abiosoft/colima) (my personal preference),
+       [OrbStack](https://orbstack.dev) etc.
 2. Make sure you have [Nico Berlee's Talos image](https://github.com/nberlee/talos/releases) downloaded (and extracted). **Important: make sure your `talosctl`
    commandline tool is of the same version as this image!** One way to deal with separate `talosctl` versions is by
    using [asdf](https://asdf-vm.com) and the [asdf-talosctl](https://github.com/bjw-s/asdf-talosctl) plugin, which I did.
 3. Make sure you have a TuringPi 2 board, BMC updated to at least 2.0.5, 4 RK1 units installed and 4 M.2 NVMe SSD units attached.
-4. Make sure your RK1 units each have a fixed IP address (preferably, for Cilium BGP, in their own VLAN).
+4. Make sure your RK1 units each have a fixed IP address (preferably, for [Cilium BGP](bgp/README.md), in their own VLAN).
 
 Let's go!
 
@@ -33,12 +37,14 @@ The extensions I need are the following:
 | [iscsi-tools](https://github.com/siderolabs/extensions/tree/main/storage/iscsi-tools)     | https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools/210789165?tag=v0.1.4      | Provides iscsi-tools for (Longhorn) storage provider      |
 | [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/144076791?tag=2.39.3 | Provides Util Linux tools for (Longhorn) storage provider |
 
-I created the image with the following commands:
+I created the image with the following commands (NOTE: I automated this with a [Shell script](create-installer-image.sh)):
 
 ```sh
 $ EXTENSIONS_IMAGE=ghcr.io/bguijt/installer:v1.7.1-1
 
-$ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.1 installer \
+$ docker run --rm -t \
+         -v $PWD/_out:/out \
+         ghcr.io/nberlee/imager:v1.7.1 installer \
          --arch arm64 \
          --board turing_rk1 \
          --platform metal \
@@ -240,9 +246,12 @@ I have not figured out (yet) how to create an ISO image with the same extensions
 
 I tried with:
 ```sh
-docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.1 iso \
+docker run --rm -t \
+       -v $PWD/_out:/out \
+       -v /dev:/dev \
+       --privileged \
+       ghcr.io/nberlee/imager:v1.7.1 metal \
        --arch arm64 \
-       --board turing_rk1 \
        --platform metal \
        --base-installer-image ghcr.io/nberlee/installer:v1.7.1-rk3588 \
        --system-extension-image ghcr.io/nberlee/rk3588:v1.7.1@sha256:239ef59bb67c48436e242fd9e39c3ef6b041e7becc1e59351d3e01495bb4e290 \
@@ -253,7 +262,7 @@ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.1 iso \
        --extra-kernel-arg cma=128MB \
        --extra-kernel-arg irqchip.gicv3_pseudo_nmi=0
 ```
-but the resulting image is just 158MB old, compared to the 1.2GB size of @nberlee's image.
+Unfortunately, installing the resulting image resulted in unresponsive RK1 units.
 
 ### Accessing the Longhorn Dashboard
 The quickest way to access the [Longhorn Dashboard](https://longhorn.io/docs/1.6.1/nodes-and-volumes/nodes/node-space-usage/)
