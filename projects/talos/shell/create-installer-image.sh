@@ -2,11 +2,11 @@
 
 # NOTE: ghcr.io/nberlee/rk3588 is added automatically to the extension list below:
 EXTENSIONS=(
-  # Image for running WASM workloads:
-  "ghcr.io/siderolabs/wasmedge:v0.3.0"
   # Images for Storage classes (Longhorn):
   "ghcr.io/siderolabs/iscsi-tools:v0.1.4"
   "ghcr.io/siderolabs/util-linux-tools:2.39.3"
+  # Image for Tailscale
+  "ghcr.io/siderolabs/tailscale:1.62.1"
 )
 
 if ! type docker &> /dev/null; then
