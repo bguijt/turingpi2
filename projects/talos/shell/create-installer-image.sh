@@ -6,7 +6,7 @@ EXTENSIONS=(
   "ghcr.io/siderolabs/wasmedge:v0.3.0"
   # Images for Storage classes (Longhorn):
   "ghcr.io/siderolabs/iscsi-tools:v0.1.4"
-  "ghcr.io/siderolabs/util-linux-tools:2.39.3"
+  "ghcr.io/siderolabs/util-linux-tools:2.40.1"
 )
 
 if ! type docker &> /dev/null; then

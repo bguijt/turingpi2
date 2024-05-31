@@ -32,56 +32,58 @@ The extensions I need are the following:
 
 | Name/Homepage                                                                             | Package sourced from                                                                          | Purpose                                                   |
 |-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------|
-| [rk3588](https://github.com/nberlee/extensions/tree/release-1.7.2/sbcs/rk3588)            | https://github.com/nberlee/extensions/pkgs/container/rk3588/218749143?tag=v1.7.2              | RK1 unit kernel modules                                   |
+| [rk3588](https://github.com/nberlee/extensions/tree/release-1.7.4/sbcs/rk3588)            | https://github.com/nberlee/extensions/pkgs/container/rk3588/218749143?tag=v1.7.4              | RK1 unit kernel modules                                   |
 | [WasmEdge](https://github.com/siderolabs/extensions/tree/main/container-runtime/wasmedge) | https://github.com/siderolabs/extensions/pkgs/container/wasmedge/210789564?tag=v0.3.0         | RuntimeClass for WASM workloads                           |
 | [iscsi-tools](https://github.com/siderolabs/extensions/tree/main/storage/iscsi-tools)     | https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools/210789165?tag=v0.1.4      | Provides iscsi-tools for (Longhorn) storage provider      |
 | [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/144076791?tag=2.39.3 | Provides Util Linux tools for (Longhorn) storage provider |
 
-I created the image with the following commands (NOTE: I automated this with a [Shell script](create-installer-image.sh)):
+I created the image with the following commands:
+
+> **NOTE:** I automated this with a [Shell script](create-installer-image.sh)!
 
 ```sh
-$ EXTENSIONS_IMAGE=ghcr.io/bguijt/installer:v1.7.2-1
+$ EXTENSIONS_IMAGE=ghcr.io/bguijt/installer:v1.7.4-1
 
-$ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.2 installer \
+$ docker run --rm -t -v $PWD/_out:/out ghcr.io/nberlee/imager:v1.7.4 installer \
          --arch arm64 \
          --platform metal \
          --overlay-name turingrk1 \
-         --overlay-image ghcr.io/nberlee/sbc-turingrk1:v1.7.2 \
-         --base-installer-image ghcr.io/nberlee/installer:v1.7.2-rk3588 \
-         --system-extension-image ghcr.io/nberlee/rk3588:v1.7.2@sha256:cf120d32b2643e8f320c47d3dd45c8ac59f96caefdd0f3052570af58abcd9290 \
+         --overlay-image ghcr.io/nberlee/sbc-turingrk1:v1.7.4 \
+         --base-installer-image ghcr.io/nberlee/installer:v1.7.4-rk3588 \
+         --system-extension-image ghcr.io/nberlee/rk3588:v1.7.4@sha256:4c978004bdd235df5579991c04b718936e5f32093c8cda1e2d0b44e2d9b4c3ed \
          --system-extension-image ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:2200a45951bac2d84d3a1bad1a59b8d89bb766ffae04fa7fbc456c01e120ac6a \
          --system-extension-image ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:fd553be175cdbbf4348657a819de5a01333b7c68ba8373dd4794c8bd1aacaa95 \
-         --system-extension-image ghcr.io/siderolabs/util-linux-tools:2.39.3@sha256:8a961ae8c91bf53e7bd3a384b07adb22d129fe34e1abe50f6378d3e81eec679a
+         --system-extension-image ghcr.io/siderolabs/util-linux-tools:2.40.1@sha256:1e10ae84107e4b3772f7b64846f7534412fa84dd79f026dfee3cfa017ae7bcaf
 
-Unable to find image 'ghcr.io/nberlee/imager:v1.7.2' locally
-95c21e1a28f9: Download complete
-712aa3641a6a: Download complete
-f5df0af89554: Download complete
-92eef0d80cfe: Download complete
-f8ffd4f1d2f5: Download complete
+Unable to find image 'ghcr.io/nberlee/imager:v1.7.4' locally
+7b47978ab7bc: Download complete
+cc7ffb2b100a: Download complete
+2b06ab14f935: Download complete
+1c5ba430c4a4: Download complete
+723f7b753023: Download complete
 profile ready:
 arch: arm64
 platform: metal
 secureboot: false
-version: v1.7.2
+version: v1.7.4
 input:
   kernel:
     path: /usr/install/arm64/vmlinuz
   initramfs:
     path: /usr/install/arm64/initramfs.xz
   baseInstaller:
-    imageRef: ghcr.io/nberlee/installer:v1.7.2-rk3588
+    imageRef: ghcr.io/nberlee/installer:v1.7.4-rk3588
   overlayInstaller:
-    imageRef: ghcr.io/nberlee/sbc-turingrk1:v1.7.2
+    imageRef: ghcr.io/nberlee/sbc-turingrk1:v1.7.4
   systemExtensions:
-    - imageRef: ghcr.io/nberlee/rk3588:v1.7.2@sha256:cf120d32b2643e8f320c47d3dd45c8ac59f96caefdd0f3052570af58abcd9290
+    - imageRef: ghcr.io/nberlee/rk3588:v1.7.4@sha256:4c978004bdd235df5579991c04b718936e5f32093c8cda1e2d0b44e2d9b4c3ed
     - imageRef: ghcr.io/siderolabs/wasmedge:v0.3.0@sha256:2200a45951bac2d84d3a1bad1a59b8d89bb766ffae04fa7fbc456c01e120ac6a
     - imageRef: ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:fd553be175cdbbf4348657a819de5a01333b7c68ba8373dd4794c8bd1aacaa95
-    - imageRef: ghcr.io/siderolabs/util-linux-tools:2.39.3@sha256:8a961ae8c91bf53e7bd3a384b07adb22d129fe34e1abe50f6378d3e81eec679a
+    - imageRef: ghcr.io/siderolabs/util-linux-tools:2.40.1@sha256:1e10ae84107e4b3772f7b64846f7534412fa84dd79f026dfee3cfa017ae7bcaf
 overlay:
   name: turingrk1
   image:
-    imageRef: ghcr.io/nberlee/sbc-turingrk1:v1.7.2
+    imageRef: ghcr.io/nberlee/sbc-turingrk1:v1.7.4
 output:
   kind: installer
   outFormat: raw
@@ -91,13 +93,13 @@ installer container image ready
 output asset path: /out/installer-arm64.tar
 
 $ crane push _out/installer-arm64.tar $EXTENSIONS_IMAGE
-2024/05/28 23:53:37 pushed blob: sha256:5061a452e451569bb64a010c662f116970e817e1658623819fd7cc11b5bcb4e1
-2024/05/28 23:53:39 pushed blob: sha256:10ad4d99a6faebd62a675db6634209d7fdecbeb07b5abcc1df1f44e595e38ddd
-2024/05/28 23:53:48 pushed blob: sha256:1cb04d9815d14d4bc19e4a5e3787edaa887dd3e5dd6ac92d61d1306f8e013d53
-2024/05/28 23:53:50 pushed blob: sha256:f8ffd4f1d2f534aa408b301f69113049b87663421b259b151c0cd51529306b21
-2024/05/28 23:53:53 pushed blob: sha256:ebe977b0d65c2a5d4eaab616c7e75ea6c2c16b47165c9de18eb223c35d5bdbe1
-2024/05/28 23:53:53 ghcr.io/bguijt/installer:v1.7.2-1: digest: sha256:4afcebd94d7d6563263c18d3938336643c4547914e50cd6f295485459123490c size: 1087
-ghcr.io/bguijt/installer@sha256:4afcebd94d7d6563263c18d3938336643c4547914e50cd6f295485459123490c
+2024/05/31 13:25:37 existing blob: sha256:5061a452e451569bb64a010c662f116970e817e1658623819fd7cc11b5bcb4e1
+2024/05/31 13:25:39 pushed blob: sha256:5435b8ad1da8721657b1a07f9eafbb649ccdf666a3a26435df55e1e0ffc08773
+2024/05/31 13:25:50 pushed blob: sha256:a345d813c6dc1eccdfceea8b283134a96eea37984b5adff8aacb75c79efb567a
+2024/05/31 13:25:51 pushed blob: sha256:723f7b75302392353ac247f24e217ce1d3acf7c3bb0dee281754bb742cb179bd
+2024/05/31 13:26:22 pushed blob: sha256:02bc6a58134bd93c298633179be76fc83e7b1f61e03c08b8621c74799ececbbf
+2024/05/31 13:26:22 ghcr.io/bguijt/installer:v1.7.4-1: digest: sha256:edddb4089191c5264bc180f5d81c41befae446dc7b17683eed7d19dd99de0aa3 size: 1087
+ghcr.io/bguijt/installer@sha256:edddb4089191c5264bc180f5d81c41befae446dc7b17683eed7d19dd99de0aa3
 ```
 
 I can use the newly created image to install the extensions to a Talos RK1 board:
@@ -108,11 +110,11 @@ watching nodes: [192.168.50.11]
 
 $ talosctl get extensions -n 192.168.50.11
 NODE            NAMESPACE   TYPE              ID            VERSION   NAME               VERSION
-192.168.50.11   runtime     ExtensionStatus   0             1         rk3588-drivers     v1.7.2
+192.168.50.11   runtime     ExtensionStatus   0             1         rk3588-drivers     v1.7.4
 192.168.50.11   runtime     ExtensionStatus   1             1         wasmedge           v0.3.0
 192.168.50.11   runtime     ExtensionStatus   2             1         iscsi-tools        v0.1.4
-192.168.50.11   runtime     ExtensionStatus   3             1         util-linux-tools   2.39.3
-192.168.50.11   runtime     ExtensionStatus   modules.dep   1         modules.dep        6.6.30-talos
+192.168.50.11   runtime     ExtensionStatus   3             1         util-linux-tools   2.40.1
+192.168.50.11   runtime     ExtensionStatus   modules.dep   1         modules.dep        6.6.32-talos
 ```
 
 Yay, it works!
@@ -141,7 +143,7 @@ ENDPOINT_IP="192.168.50.2"
 LONGHORN_NS=longhorn-system
 LONGHORN_MOUNT=/var/mnt/longhorn
 
-INSTALLER=ghcr.io/bguijt/installer:v1.7.2-1
+INSTALLER=ghcr.io/bguijt/installer:v1.7.4-1
 ```
 
 1. `CLUSTERNAME` is an arbitrary name, used as a label in your local client configuration
