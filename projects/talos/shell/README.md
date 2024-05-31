@@ -3,7 +3,9 @@
 ## Preparations
 1. Make sure you have the following tools installed:
    - [tpi]( https://github.com/turing-machines/tpi)
-   - [talosctl](https://github.com/siderolabs/homebrew-tap)
+   - [talosctl](https://github.com/siderolabs/homebrew-tap) - if you want to keep the `talosctl` version consistent
+     (not using the latest version), consider using [asdf](https://asdf-vm.com) and the
+     [asdf-talosctl](https://github.com/bjw-s/asdf-talosctl) plugin (which I do)
    - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
    - [helm](https://helm.sh/docs/intro/install/)
    - [yq](https://github.com/mikefarah/yq/#install)
@@ -11,11 +13,8 @@
      > **NOTE:** *Docker* can be Docker Desktop or any alternative that works with a `docker` cmd line interface, e.g.
        [Colima](https://github.com/abiosoft/colima) (my personal preference),
        [OrbStack](https://orbstack.dev) etc.
-2. Make sure you have [Nico Berlee's Talos image](https://github.com/nberlee/talos/releases) downloaded (and extracted). **Important: make sure your `talosctl`
-   commandline tool is of the same version as this image!** One way to deal with separate `talosctl` versions is by
-   using [asdf](https://asdf-vm.com) and the [asdf-talosctl](https://github.com/bjw-s/asdf-talosctl) plugin, which I did.
-3. Make sure you have a TuringPi 2 board, BMC updated to at least 2.0.5, 4 RK1 units installed and 4 M.2 NVMe SSD units attached.
-4. Make sure your RK1 units each have a fixed IP address (preferably, for [Cilium BGP](bgp/README.md), in their own VLAN).
+2. Make sure you have a TuringPi 2 board, BMC updated to at least 2.0.5, 4 RK1 units installed and 4 M.2 NVMe SSD units attached.
+3. Make sure your RK1 units each have a fixed IP address (preferably, for [Cilium BGP](bgp/README.md), in their own VLAN).
 
 Let's go!
 
@@ -157,13 +156,14 @@ INSTALLER=ghcr.io/bguijt/installer:v1.7.4-1
    either 3 or 1 ControlPlane nodes. Read [Why should a Kubernetes control plane be three nodes?](https://www.siderolabs.com/blog/why-should-a-kubernetes-control-plane-be-three-nodes/)
    for my choice of using three ControlPlane nodes.
 5. `ENDPOINT_IP` is a reserved IP address which is not used yet but out of reach for your router's DHCP service.
-6. `IMAGE` is the [Talos image you downloaded](https://github.com/nberlee/talos/releases).
 
 The rest of the variables can be left as-is:
 7. `LONGHORN_NS` is the Kubernetes namespace to use for Longhorn.
 8. `LONGHORN_MOUNT` is the mount point for Longhorn storage on each RK1 node.
    I tried to work with `/var/lib/longhorn` at first, but got into some configuration issue.
 9. `INSTALLER` is the name of the Talos Installer image, the one mentioned above as `$EXTENSIONS_IMAGE`.
+   This value is calculated using the `talosctl` version and uses the image I prepared upfront with
+   this [shell script](create-installer-image.sh).
 
 #### Helm chart values for Cilium
 [Cilium](https://docs.cilium.io/en/stable/overview/intro/) is setup using their Helm chart, as follows:
