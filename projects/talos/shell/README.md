@@ -9,6 +9,9 @@
    - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
    - [helm](https://helm.sh/docs/intro/install/)
    - [yq](https://github.com/mikefarah/yq/#install)
+   - [gh](https://cli.github.com)
+   - [XZ Utils](https://github.com/tukaani-project/xz)
+   - [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md)
    - If you want to assemble a Talos image yourself: [docker](https://www.docker.com/products/docker-desktop/)
      > **NOTE:** *Docker* can be Docker Desktop or any alternative that works with a `docker` cmd line interface, e.g.
        [Colima](https://github.com/abiosoft/colima) (my personal preference),
