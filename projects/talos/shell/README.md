@@ -1,5 +1,19 @@
 # Setup Talos with Cilium, Longhorn and WasmEdge
 
+## Introduction
+I have a [TuringPi2](https://turingpi.com) board with four [RK1](https://turingpi.com/product/turing-rk1/?attribute_ram=16+GB)
+modules installed on it. I bought this board to help me learn Kubernetes.
+
+This document describes a way to setup Talos Kubernetes with Cilium, Longhorn and WasmEdge extensions
+on that board.
+
+I like Talos because of it is a bare minimum OS just enough to run Kubelet,
+made possible by @nberlee who created [an RK1-specific fork](https://github.com/nberlee/talos).
+
+I added [Cilium](https://cilium.io) because I need [routing in place](bgp/README.md) to access my k8s services,
+[Longhorn](https://longhorn.io) for providing Storage and [WasmEdge](https://wasmedge.org) for
+running WebAssembly loads.
+
 ## Preparations
 1. Make sure you have the following tools installed:
    - [tpi]( https://github.com/turing-machines/tpi)
