@@ -175,6 +175,7 @@ INSTALLER=ghcr.io/bguijt/installer:v1.7.4-1
 5. `ENDPOINT_IP` is a reserved IP address which is not used yet but out of reach for your router's DHCP service.
 
 The rest of the variables can be left as-is:
+
 7. `LONGHORN_NS` is the Kubernetes namespace to use for Longhorn.
 8. `LONGHORN_MOUNT` is the mount point for Longhorn storage on each RK1 node.
    I tried to work with `/var/lib/longhorn` at first, but got into some configuration issue.
