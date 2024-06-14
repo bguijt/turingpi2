@@ -9,6 +9,8 @@ ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
 ALLOW_SCHEDULING_ON_CONTROLPLANE=true
 ENDPOINT_IP="192.168.50.2"
 
+WATCHDOG_TIMER=5m
+
 LONGHORN_NS=longhorn-system
 LONGHORN_MOUNT=/var/mnt/longhorn
 
@@ -192,7 +194,7 @@ talosctl gen config $CLUSTERNAME https://${ENDPOINT_IP}:6443 \
 
 for node in 0 1 2 3; do
   echo "Generating config for ${ROLES[@]:$node:1} ${HOSTNAMES[@]:$node:1}..."
-  talosctl machineconfig patch ${ROLES[@]:$node:1}.yaml \
+  talosctl patch machineconfig ${ROLES[@]:$node:1}.yaml \
           --patch '[{"op": "add", "path": "/machine/network/hostname", "value": "'${HOSTNAMES[@]:$node:1}'"}]' \
           --output ${HOSTNAMES[@]:$node:1}.yaml
 done
@@ -322,6 +324,18 @@ kubectl wait pod \
 echo "Adding Metrics Server (and Kubelet Serving Certificate Approver)..."
 kubectl apply -f https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+# https://www.talos.dev/v1.7/advanced/watchdog/
+echo "Add Watchdog Timer for ${WATCHDOG_TIMER}..."
+cat << EOF > ${CLUSTERNAME}-watchdog-patch.yaml
+apiVersion: v1alpha1
+kind: WatchdogTimerConfig
+device: /dev/watchdog0
+timeout: ${WATCHDOG_TIMER}
+EOF
+talosctl patch machineconfig \
+         --patch @${CLUSTERNAME}-watchdog-patch.yaml \
+         --nodes $(echo ${IPS[@]} | tr ' ' ',')
 
 echo "Adding RuntimeClass for WASM workloads..."
 kubectl apply -f - << EOF

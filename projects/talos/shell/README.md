@@ -156,6 +156,8 @@ HOSTNAMES=("talos-tp1-n1"  "talos-tp1-n2"  "talos-tp1-n3"  "talos-tp1-n4")
 ROLES=(    "controlplane"  "controlplane"  "controlplane"  "worker")
 ENDPOINT_IP="192.168.50.2"
 
+WATCHDOG_TIMER=5m
+
 LONGHORN_NS=longhorn-system
 LONGHORN_MOUNT=/var/mnt/longhorn
 
@@ -176,10 +178,12 @@ INSTALLER=ghcr.io/bguijt/installer:v1.7.4-1
 
 The rest of the variables can be left as-is:
 
-7. `LONGHORN_NS` is the Kubernetes namespace to use for Longhorn.
-8. `LONGHORN_MOUNT` is the mount point for Longhorn storage on each RK1 node.
+7. `WATCHDOG_TIMER` is the [timeout after which the RK1 unit will reboot itself](https://www.talos.dev/v1.7/advanced/watchdog/)
+   after the system becomes unresponsive.
+8. `LONGHORN_NS` is the Kubernetes namespace to use for Longhorn.
+9. `LONGHORN_MOUNT` is the mount point for Longhorn storage on each RK1 node.
    I tried to work with `/var/lib/longhorn` at first, but got into some configuration issue.
-9. `INSTALLER` is the name of the Talos Installer image, the one mentioned above as `$EXTENSIONS_IMAGE`.
+10. `INSTALLER` is the name of the Talos Installer image, the one mentioned above as `$EXTENSIONS_IMAGE`.
    This value is calculated using the `talosctl` version and uses the image I prepared upfront with
    this [shell script](create-installer-image.sh).
 
