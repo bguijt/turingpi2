@@ -142,7 +142,7 @@ cat << EOF > ${CLUSTERNAME}-worker-patch.yaml
     vm.nr_hugepages: "1024"
 
 # Cilium:
-- op: add 
+- op: add
   path: /cluster/network/cni
   value:
     name: none
@@ -172,7 +172,7 @@ cat << EOF >> ${CLUSTERNAME}-controlplane-patch.yaml
   value: $LONGHORN_NS
 
 # Cilium:
-- op: add 
+- op: add
   path: /cluster/proxy
   value:
     disabled: true
@@ -194,9 +194,10 @@ talosctl gen config $CLUSTERNAME https://${ENDPOINT_IP}:6443 \
 
 for node in 0 1 2 3; do
   echo "Generating config for ${ROLES[@]:$node:1} ${HOSTNAMES[@]:$node:1}..."
-  talosctl patch machineconfig ${ROLES[@]:$node:1}.yaml \
+  talosctl machineconfig patch ${ROLES[@]:$node:1}.yaml \
           --patch '[{"op": "add", "path": "/machine/network/hostname", "value": "'${HOSTNAMES[@]:$node:1}'"}]' \
-          --output ${HOSTNAMES[@]:$node:1}.yaml
+          --talosconfig ./talosconfig \
+          > ${HOSTNAMES[@]:$node:1}.yaml
 done
 
 for node in 0 1 2 3; do
