@@ -14,6 +14,11 @@ if ! type docker &> /dev/null; then
   exit 1
 fi
 
+if ! docker info > /dev/null 2>&1; then
+  echo "Docker is not running!"
+  exit 1
+fi
+
 if ! type crane &> /dev/null; then
   echo "*** crane must be installed! Install 'crane': https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md ***"
   exit 1
@@ -29,6 +34,11 @@ if ! type gh &> /dev/null; then
   exit 1
 fi
 
+if ! gh auth status > /dev/null 2>&1; then
+    echo "You need to login: 'gh auth login --scopes write:packages'"
+    exit 1
+fi
+
 if ! type jq &> /dev/null; then
   echo "*** jq must be installed! Install 'jq': https://jqlang.github.io/jq/download/ ***"
   exit 1
@@ -38,7 +48,11 @@ echo "Determining Talos version..."
 TALOS_VERSION=$(talosctl version --client | grep "Tag:" | awk '{print $2}')
 echo "Talos client version ${TALOS_VERSION} found. We will use that version for the Talos nodes, too."
 
-EXTENSIONS_IMAGE=ghcr.io/$(gh api user | jq -r '.login')/installer:${TALOS_VERSION}-1
+GH_USER=$(gh api user | jq -r '.login')
+EXTENSIONS_IMAGE=ghcr.io/${GH_USER}/installer:${TALOS_VERSION}-1
+
+echo "Logging Docker into GitHub with user ${GH_USER}..."
+echo $(gh auth token) | docker login ghcr.io --username ${GH_USER} --password-stdin
 
 echo "Creating Talos image $EXTENSIONS_IMAGE with provided extensions..."
 docker run --rm -t \
@@ -57,4 +71,8 @@ if [ ! -f _out/installer-arm64.tar ]; then
   exit 1
 fi
 
-crane push _out/installer-arm64.tar $EXTENSIONS_IMAGE
+echo "Pushing image $EXTENSIONS_IMAGE..."
+if ! crane push _out/installer-arm64.tar $EXTENSIONS_IMAGE; then
+  echo "Pushing image failed. Perhaps your GitHub auth scopes are insufficient?"
+  echo "In that case, execute 'gh auth logout' followed by 'gh auth login --scopes write:packages'"
+fi

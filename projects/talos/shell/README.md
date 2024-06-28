@@ -51,7 +51,7 @@ The extensions I need are the following:
 | [rk3588](https://github.com/nberlee/extensions/tree/release-1.7.4/sbcs/rk3588)            | https://github.com/nberlee/extensions/pkgs/container/rk3588/218749143?tag=v1.7.4              | RK1 unit kernel modules                                   |
 | [WasmEdge](https://github.com/siderolabs/extensions/tree/main/container-runtime/wasmedge) | https://github.com/siderolabs/extensions/pkgs/container/wasmedge/210789564?tag=v0.3.0         | RuntimeClass for WASM workloads                           |
 | [iscsi-tools](https://github.com/siderolabs/extensions/tree/main/storage/iscsi-tools)     | https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools/210789165?tag=v0.1.4      | Provides iscsi-tools for (Longhorn) storage provider      |
-| [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/144076791?tag=2.39.3 | Provides Util Linux tools for (Longhorn) storage provider |
+| [util-linux-tools](https://github.com/siderolabs/extensions/tree/main/tools/util-linux)   | https://github.com/siderolabs/extensions/pkgs/container/util-linux-tools/220231183?tag=2.40.1 | Provides Util Linux tools for (Longhorn) storage provider |
 
 I created the image with the following commands:
 
