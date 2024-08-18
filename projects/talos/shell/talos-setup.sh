@@ -109,7 +109,7 @@ cat << EOF > ${CLUSTERNAME}-worker-patch.yaml
   value:
     servers:
       - time.cloudflare.com
-      - time.nist.gov
+      - time.google.com
     bootTimeout: 2m0s
 
 # Metrics:
@@ -267,7 +267,7 @@ done
 
 helm repo add cilium https://helm.cilium.io/
 helm repo update cilium
-CILIUM_LATEST=$(helm search repo cilium --versions --output yaml | yq '.[0].version')
+CILIUM_LATEST=$(helm search repo cilium/cilium --versions --output yaml | yq '.[0].version')
 echo "Installing Cilium version ${CILIUM_LATEST}..."
 helm install cilium cilium/cilium \
      --version ${CILIUM_LATEST} \
