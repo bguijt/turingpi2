@@ -73,6 +73,11 @@ fi
 
 echo "Pushing image $EXTENSIONS_IMAGE..."
 if ! crane push _out/installer-arm64.tar $EXTENSIONS_IMAGE; then
-  echo "Pushing image failed. Perhaps your GitHub auth scopes are insufficient?"
-  echo "In that case, execute 'gh auth logout' followed by 'gh auth login --scopes write:packages'"
+  echo "Pushing image failed. This is 'gh auth status':"
+  gh auth status
+  if gh auth status | grep -qF "'write:packages'"; then
+    echo "Your GitHub token has required scope 'write:packages'. No idea what is going on."
+  else
+    echo "Your GitHub token is not scoped for 'write:packages'. Please execute 'gh auth logout' followed by 'gh auth login --scopes write:packages'"
+  fi
 fi
