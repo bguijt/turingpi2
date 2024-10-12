@@ -48,7 +48,7 @@ echo "Determining Talos version..."
 TALOS_VERSION=$(talosctl version --client | grep "Tag:" | awk '{print $2}')
 echo "Talos client version ${TALOS_VERSION} found. We will use that version for the Talos nodes, too."
 
-GH_USER=$(gh api user | jq -r '.login')
+GH_USER=$(gh api user | jq -r '.login | ascii_downcase')
 EXTENSIONS_IMAGE=ghcr.io/${GH_USER}/installer:${TALOS_VERSION}-1
 
 echo "Logging Docker into GitHub with user ${GH_USER}..."
